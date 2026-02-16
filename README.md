@@ -38,7 +38,9 @@ CREATE POLICY "Users can view their own bookmarks" ON bookmarks FOR SELECT USING
 CREATE POLICY "Users can insert their own bookmarks" ON bookmarks FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own bookmarks" ON bookmarks FOR DELETE USING (auth.uid() = user_id);
 
+-- Realtime: required so other tabs get insert/update/delete events
 ALTER PUBLICATION supabase_realtime ADD TABLE bookmarks;
+ALTER TABLE bookmarks REPLICA IDENTITY FULL;  -- needed so DELETE events work with user_id filter
 ```
 
 - Turn on Google under **Authentication → Providers**
@@ -59,7 +61,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 npm run dev
 ```
 
-Open [http://localhost:3000]
+Open [http://localhost:3000](http://localhost:3000).
+
+## Problems & Solutions
+
+- **Other tab doesn’t update when adding a bookmark** — Ensure the table is in the Realtime publication: `ALTER PUBLICATION supabase_realtime ADD TABLE bookmarks;` (Database → Replication in Supabase). Both tabs must be same origin and logged in.
+- **Other tab doesn’t update when deleting a bookmark** — DELETE events need the full row for the `user_id` filter. Run in Supabase SQL Editor: `ALTER TABLE bookmarks REPLICA IDENTITY FULL;`
+- **Realtime showed all users’ bookmarks** — Subscribed to changes for the current user only using Supabase Realtime `filter: \`user_id=eq.${user.id}\``.
+- **OAuth redirect broke in production** — Stopped hardcoding redirect; use `window.location.origin + '/dashboard'` so it works on any host.
+- **No way to delete bookmarks** — Added delete with RLS and a confirmation dialog.
+- **Empty or invalid URLs accepted** — Client-side validation: require title and validate URL with `new URL(url)`.
+- **No loading or error feedback** — Added spinners, error messages, disabled buttons while submitting, empty state, and delete confirmation.
+- **Weak types** — Introduced TypeScript interfaces for `User` and `Bookmark` instead of `any`.
 
 ## Deploy (Vercel)
 
