@@ -16,7 +16,8 @@ interface BookmarkCardProps {
 }
 
 export default function BookmarkCard({ bookmark, onDelete }: BookmarkCardProps) {
-  const formattedDate = new Date(bookmark.created_at).toLocaleDateString('en-US', {
+  const formattedDate = new Date(bookmark.created_at).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
     year: 'numeric',
     month: 'short',
     day: 'numeric',
